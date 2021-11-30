@@ -10,13 +10,11 @@ import sqlite3 as SQL
 from flask_googlemaps import GoogleMaps
 from flask_googlemaps import Map
 
-from helpers import apology, login_required, lookup, usd
+from helpers import apology, login_required
 
 # Configure application
 app = Flask(__name__)
 GoogleMaps(app)
-
-# Luke
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -27,11 +25,11 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure final_project to use SQLite database
-db = SQL("sqlite:///map.db")
+# db = SQL("sqlite:///map.db")
 
 # Make sure API key is set
-if not os.environ.get("API_KEY"):
-    raise RuntimeError("API_KEY not set")
+# if not os.environ.get("API_KEY"):
+#    raise RuntimeError("API_KEY not set")
 
 # datetime object containing current date and time
 now = datetime.now()
@@ -84,10 +82,6 @@ def history():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    return apology("TO DO")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
     """Log user in"""
 
     # Forget any user_id
@@ -132,9 +126,11 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     return apology("TO DO")
+
 
 def errorhandler(e):
     """Handle error"""
