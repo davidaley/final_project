@@ -12,11 +12,11 @@ from flask_googlemaps import Map
 
 from helpers import apology, login_required, lookup, usd
 
-# Luke
-
 # Configure application
 app = Flask(__name__)
 GoogleMaps(app)
+
+# Luke
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
