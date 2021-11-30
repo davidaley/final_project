@@ -12,6 +12,8 @@ from flask_googlemaps import Map
 
 from helpers import apology, login_required, lookup, usd
 
+# Luke
+
 # Configure application
 app = Flask(__name__)
 GoogleMaps(app)
