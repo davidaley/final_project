@@ -14,6 +14,11 @@ from helpers import apology, login_required
 
 # Configure application
 app = Flask(__name__)
+
+# you can set key as config
+app.config['GOOGLEMAPS_KEY'] = "AIzaSyAXAcdlTNb00vDejvnCvAWCPcG5-MW3UhI"
+
+# Initialize the extension
 GoogleMaps(app)
 
 # Ensure templates are auto-reloaded
@@ -28,8 +33,8 @@ Session(app)
 # db = SQL("sqlite:///map.db")
 
 # Make sure API key is set
-# if not os.environ.get("API_KEY"):
-#    raise RuntimeError("API_KEY not set")
+if not os.environ.get("API_KEY"):
+   raise RuntimeError("API_KEY not set")
 
 # datetime object containing current date and time
 now = datetime.now()
