@@ -1,150 +1,125 @@
-import os
-
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, redirect, request, render_template, session, url_for, abort
 from flask_session import Session
-from tempfile import mkdtemp
-from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
-from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
-import sqlite3 as SQL
-from flask_googlemaps import GoogleMaps
-from flask_googlemaps import Map
+import requests
+from helpers import get_liked_tracks, get_user_id
+import startup
+import pandas as pd
+from cs50 import SQL
 
-from helpers import apology, login_required
-
-# Configure application
+# Configure application (credit: Finance PSET)
 app = Flask(__name__)
 
-# you can set key as config
-app.config['GOOGLEMAPS_KEY'] = "AIzaSyAXAcdlTNb00vDejvnCvAWCPcG5-MW3UhI"
-
-# Initialize the extension
-GoogleMaps(app)
-
-# Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure final_project to use SQLite database
-# db = SQL("sqlite:///map.db")
+# Allow program to use SQL database in songmap.db
+db = SQL("sqlite:///songmap.db")
 
-# Make sure API key is set
-if not os.environ.get("API_KEY"):
-   raise RuntimeError("API_KEY not set")
+# Pre-home page - before user logs in
+@app.route("/", methods=["GET", "POST"])
+def index():
 
-# datetime object containing current date and time
-now = datetime.now()
-
-# dd/mm/YY H:M:S
-dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-
-@app.after_request
-def after_request(response):
-    """Ensure responses aren't cached"""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
-
-@app.route("/")
-def mapview():
-    # creating a map in the view
-    mymap = Map(
-        identifier="view-side",
-        lat=37.4419,
-        lng=-122.1419,
-        markers=[(37.4419, -122.1419)]
-    )
-    sndmap = Map(
-        identifier="sndmap",
-        lat=37.4419,
-        lng=-122.1419,
-        markers=[
-          {
-             'icon': 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-             'lat': 37.4419,
-             'lng': -122.1419,
-             'infobox': "<b>Hello World</b>"
-          },
-          {
-             'icon': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-             'lat': 37.4300,
-             'lng': -122.1400,
-             'infobox': "<b>Hello World from other place</b>"
-          }
-        ]
-    )
-    return render_template('example.html', mymap=mymap, sndmap=sndmap)
-
-@app.route("/history")
-@login_required
-def history():
-    return apology("TO DO")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    """Log user in"""
-
-    # Forget any user_id
-    session.clear()
-
-    # User reached route via POST (as by submitting a form via POST)
+    # When Spotify Login button clicked ...
     if request.method == "POST":
 
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
+        # Create empty session variables so /callback/ can run
+        session["latest_song"] = "Just logged on."
+        session["latest_coords"] = "Just logged on."
+        session["latest_info"] = "Just logged on."
 
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
+        # Redirect to logged in page (leads with /callback/)
+        response = startup.getUser()
+        return redirect(response)
+    
+    # Until Spotify Login button clicked, render pre-home page
+    else:       
+        return render_template("index.html")
 
-        # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
+# Home page, where SongMap is viewable
+@app.route("/callback/", methods=["GET", "POST"])
+def map():
 
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+    # For the Spotify API
+    auth_token = request.args['code']
+    startup.getUserToken(auth_token)
 
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+    # Refresh the user access token and id, store these as session variables
+    session["user_spot_access"] = startup.getAccessToken()[0]
+    session["user_id"] = get_user_id(session["user_spot_access"])
 
-        # Redirect user to home page
-        return redirect("/")
 
-    # User reached route via GET (as by clicking a link or via redirect)
+    # Once the "Choose Song" button is clicked, redirect to /pin
+    if request.method == "POST":
+        return redirect("/pin")
+    
+    # Otherwise, render the home page with all previous points loaded from SQL
+    else:       
+
+        # Create database of map points using SQL query
+        mappoints = db.execute("SELECT * FROM mappoints WHERE user_id = ?", session["user_id"])
+
+        # Check if map points exist for user
+        if len(mappoints) == 0:
+
+            # If not, generate the example map point and render map; use these starting points
+            mappoints = db.execute("SELECT * FROM mappoints WHERE user_id = ?", "example_user_id")
+            startlat = mappoints[0]["latlng"].split(",", 1)[0].split("(")[1]
+            startlng = mappoints[0]["latlng"].split(", ")[1].replace(")", "")
+
+            return render_template("map.html", mappoints=mappoints, startlat=startlat, startlng=startlng)
+
+        # Otherwise render map with points; use starting points of first point
+        else:
+            startlat = mappoints[0]["latlng"].split(",", 1)[0].split("(")[1]
+            startlng = mappoints[0]["latlng"].split(", ")[1].replace(")", "")
+            return render_template("map.html", mappoints=mappoints, startlat=startlat, startlng=startlng)
+
+
+# Submit form for mapping a song
+@app.route("/pin", methods=["GET", "POST"])
+def pin():
+
+    # Takes the coordinates selected on the homepage, stores them as session variable for input into SQL 
+    session["latest_coords"] = request.form.get("lat-lng")
+    
+    # Searches for liked songs so dropdown menu has items
+    liked_songs = get_liked_tracks(session["user_spot_access"])
+    n_songs = range(len(liked_songs))
+
+    # Reset request method (this solved several issues)
+    request.method = "GET"
+
+    # Once the "Choose Song" button is clicked, redirect to intermediate /song-submit page
+    if request.method == "POST":
+        return redirect("/song-submit")
+    
+    # Otherwise, render the submit page
     else:
-        return render_template("login.html")
+        return render_template("pin.html", liked_songs=liked_songs, n_songs=n_songs)
 
+# Intermediate route between /pin and home (the user won't see these functions at work)
+@app.route("/song-submit", methods=["GET", "POST"])
+def submit():
 
-@app.route("/logout")
-def logout():
-    """Log user out"""
+    # Takes the song selected from /pin, stores it as session variable for input into SQL
+    latest_song = request.form.get("song_title")
+    session["latest_song"] = latest_song
 
-    # Forget any user_id
-    session.clear()
+    # Re-creates liked_songs data frame (in case user has liked a new song)...
+    access_token = startup.getAccessToken()[0]
+    liked_songs = get_liked_tracks(access_token)
+    # ...creates session variable with info for "latest_song" (artist and artwork) via search
+    session["latest_info"] = liked_songs.loc[liked_songs['title'] == session["latest_song"]]
 
-    # Redirect user to login form
-    return redirect("/")
+    # Insert new song information (title, artist, artwork_url) and coordinates into songmap.db
+    db.execute("INSERT INTO mappoints (user_id, latlng, title, artist, artwork_url) VALUES(?, ?, ?, ?, ?)", 
+                   session["user_id"], session["latest_coords"], 
+                   session["latest_song"], session["latest_info"].iloc[0, 1], 
+                   session["latest_info"].iloc[0, 2])
 
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    return apology("TO DO")
-
-
-def errorhandler(e):
-    """Handle error"""
-    if not isinstance(e, HTTPException):
-        e = InternalServerError()
-    return apology(e.name, e.code)
-
-
-# Listen for errors
-for code in default_exceptions:
-    app.errorhandler(code)(errorhandler)
-
+    # Redirects to home page
+    response = startup.getUser()
+    return redirect(response)

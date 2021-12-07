@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+
+        <!-- Code for Leaflet, including corner information and setup -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+
+        <link rel="stylesheet" href="/static/style.css" />
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+
+        <!-- Generating map using Javascript -->
+        <script>
+
+            window.onload = () => {
+
+                // Using starting coordinates variables to set map view at first song
+                var startlat = '{{ startlat }}';
+                var starlng = '{{ startlng }}';
+                var map = L.map('map').setView([startlat, starlng], 3);
+
+                // Access map data using access token
+                L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+                    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                    maxZoom: 18,
+                    id: 'mapbox/streets-v11',
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    accessToken: 'pk.eyJ1IjoiZGF2aWRhbGV5MzEiLCJhIjoiY2t3bnlmNWQ4MGIwczJvbzR4a2UyeHV4eiJ9.Bj8ZO2cLlsYkfJ5PUiocHw'
+                }).addTo(map);
+
+                // Run for loop over mappoints to load existing mapped songs
+                {% for point in mappoints %}
+                    
+                    // Create variables for coordinates of each mapped song
+                    var latlng_string = '{{ point["latlng"] }}';
+                    var lat = latlng_string.split(",")[0].split("(")[1];
+                    var lng = latlng_string.split(", ")[1].replace(")", "");
+
+                    // Create variables for features of each mapped song...
+                    var title = '{{ point["title"] }}';
+                    var artist = '{{ point["artist"] }}';
+                    var artwork_url = '{{ point["artwork_url"] }}';
+                    // ...and combine these into an HTML-type string
+                    var popup_text = "<b id='title_java'>"+title+"</b> <p id='artist_java'>"+artist+"</p> <img id='artwork_url_java' src='"+artwork_url+"' width='150' height='150'/>";
+
+                    // Create each marker, using popup HTML text
+                    var marker = L.marker([lat, lng], {
+                        autoClose: false,
+                        closeOnClick: false,
+                        draggable: false,
+                    }).addTo(map).bindPopup(popup_text).openPopup();
+
+                // End for loop
+                {% endfor %}
+
+                // Create empty popup variable
+                var popup = L.popup();
+
+                // Create SongPopup function for creating new mapped songs
+                function SongPopup(e) {
+
+                    // Create coords data for where to place popup
+                    document.getElementById('lat-lng').value = e.latlng.toString();
+
+                    // Create popup, which appears when clicked
+                    popup
+                        .setLatLng(e.latlng)
+                        .setContent("Click \"Choose Song\" below to place a song here!")
+                        .openOn(map);
+
+                }
+
+                // Show popup using SongPopup() function when clicked
+                map.on('click', SongPopup);
+
+            }
+
+        </script>
+
+    </head>
+
+    <body style="background-color: rgb(30, 215, 96);"></body>
+    <body>
+
+        <nav class="bg-light border navbar navbar-expand-md navbar-light">
+            <div class="container-fluid">
+                <a style="text-decoration:none" class="navbar-brand" href="/">
+                    <span><img src="../static/songmap_logo_cropped.png" alt="" width="45" height="42"></span>
+                    <span class="sans"><b>SongMapper</b></span>
+                </a>
+            </div>
+        </nav>
+
+        <h2 style="font-family:sans-serif; text-align:center"> Click anywhere on the map to start songmapping!</h2>
+        <h3 style="font-family:sans-serif; text-align:center"> Click, hold, and drag on the map to adjust the view. Zoom in using two fingers or click the buttons in the top left.</h3>
+
+        <br><div id="map"></div>
+        
+        <div>
+            <form action = "/pin" method = "POST">
+                <input type="hidden" name="lat-lng" id="lat-lng" />
+                <button type="submit" class='button button2'>Choose Song</button>
+            </form>
+        </div>
+        
+    </body>
+
+</html>

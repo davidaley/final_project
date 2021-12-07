@@ -1,23 +1,42 @@
-/* Size for brand */
+#map { 
+    height: 720px; 
+    width: 100%;
+    border-style: solid;
+    border-width: 4px;
+    }
+
+.sans {
+    font-family: 'Gotham', sans-serif;
+    font: 100;
+    color: #000000;
+    }
+
 nav .navbar-brand
 {
-    font-size: xx-large;
+    font-size: xxx-large;
 }
 
-/* Colors for brand */
-nav .navbar-brand .blue
-{
-    color: #537fbe;
-}
-nav .navbar-brand .red
-{
-    color: #ea433b;
-}
-nav .navbar-brand .yellow
-{
-    color: #f5b82e;
-}
-nav .navbar-brand .green
-{
-    color: #2e944b;
-}
+.button {
+    border: none;
+    color: white;
+    padding: 16px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+  }
+  
+  .button2 {
+    font-family: 'Gotham', sans-serif;
+    background-color: white; 
+    color: black; 
+    border: 2px solid #0f23d3;
+  }
+  
+  .button2:hover {
+    background-color: #0f23d3;
+    color: white;
+  }

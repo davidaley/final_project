@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+
+        <link rel="stylesheet" href="/static/style.css" />
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+        
+        <nav class="bg-light border navbar navbar-expand-md navbar-light">
+            <div class="container-fluid">
+                <a style="text-decoration:none" class="navbar-brand" href="/">
+                    <span><img src="../static/songmap_logo_cropped.png" alt="" width="45" height="45"></span>
+                    <span class="sans"><b>SongMapper</b></span>
+                </a>
+            </div>
+        </nav>
+    </head>
+
+    <body style="background-color: rgb(30, 215, 96);">
+        <form action="/song-submit" method="POST">
+            <div class="mb-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="song_title" list="liked_songs" type="text">
+                    <datalist id="liked_songs">
+                    {% for i in n_songs %}
+                        <option value="{{ liked_songs.iloc[i, 0] }}">{{ liked_songs.iloc[i, 1] }}</option>
+                    {% endfor %}
+                    </datalist>
+                </select>
+            </div>
+            <div><form action = '/pin' id='coords' method = 'GET'><button class='button button2' type='submit'>Submit</button></form></div>        
+        </form>    
+    </body>
+
+</html>
