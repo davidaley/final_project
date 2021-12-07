@@ -18,10 +18,6 @@ def getToken(code, client_id, client_secret, redirect_uri):
         "client_id": client_id,
         "client_secret": client_secret
     }
-        
-     
-    # encoded = base64.b64encode("{}:{}".format(client_id, client_secret).encode())
-    # headers = {"Content-Type" : HEADER, "Authorization" : "Basic {}".format(encoded)} 
 
     post = requests.post(SPOTIFY_URL_TOKEN, data = body) #params=body, headers=headers)
     return handleToken(json.loads(post.text))
