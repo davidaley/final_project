@@ -6,7 +6,7 @@ This website was built using Flask, HTML, Javascript, CSS, and SQL. Flask was us
 
 URL to video: https://www.youtube.com/watch?v=xCVYlQlfLwM
 
-If you are testing this website, please use a Spotify dummy account as we need to authorize every Spotify user who logs in to our website
+If you are testing this website, please use a Spotify dummy account we created as we need to authorize every Spotify user who logs in to our website:
         - Email: mciacblooalapxxhfu@nvhrw.com
         - Password: thisiscs50
 
